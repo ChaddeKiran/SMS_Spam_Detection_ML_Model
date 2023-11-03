@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+      
+    stages {
+        stage('checkout') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url: 'https://github.com/ChaddeKiran/SMS_Spam_Detection_ML_Model.git']]])     
+            }
+        }
+    / / Building Docker images
+    stage('Build DockerImage') {
+      steps{
+           sh 'docker build -t $JOB_NAME:$BUILD_ID .'
+      }
+    }
+   
+    // Uploading Docker images Centralized Ropository 
+    stage('Push on DockerHub') {
+     steps{  
+            sh 'docker tag $JOB_NAME:$BUILD_ID chaddekiran/$JOB_NAME:$BUILD_ID'
+            sh 'docker tag $JOB_NAME:$BUILD_ID chaddekiran/$JOB_NAME:latest'
+            sh 'docker rmi chaddekiran/$JOB_NAME:$BUILD_ID chaddekiran/$JOB_NAME:latest'
+        }
+      }
+
+       stage('K8S Deploy') {
+        steps{   
+            withKubeConfig([credentialsId: 'K8S', serverUrl: '']) {
+                sh 'kubectl apply -f  deployment_sms_spam_detector.yaml'
+                sh 'kubectl apply -f service_LB.yaml'
+                }
+           }
+       }
+    }
+}

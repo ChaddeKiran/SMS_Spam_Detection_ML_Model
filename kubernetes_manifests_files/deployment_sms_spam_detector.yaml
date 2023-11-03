@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: sms_spam_detector
+  name: sms_spam_detector
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sms_spam_detector
+  template:
+    metadata:
+      labels:
+        app: sms_spam_detector
+    spec:
+      containers:
+      - name: sms_spam_detector
+        image: chaddekiran/sms_spam_detection_ml_model:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8501
+          name: http
+          protocol: TCP
